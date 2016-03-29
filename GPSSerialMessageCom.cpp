@@ -159,6 +159,8 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
       int ret;
       //GPS interface variabes
       uint8_t modenum[2];
+      uint16_t gps_week[1];
+      uint32_t timeofweek[1];
       int32_t array_position[2];
       uint32_t array_altitude[2];
       uint16_t array_dilution[5];
@@ -169,27 +171,29 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
       
       //Receive Navigate binary message and scale with data format 
       //and input into Parameters "
-      ret=gps.ReceiveNavigationData(modenum,array_position, array_altitude, array_dilution, array_coordinate,array_veolcity);
+      ret=gps.ReceiveNavigationData(modenum, gps_week, timeofweek, array_position, array_altitude, array_dilution, array_coordinate,array_veolcity);
       if(ret==1){
        	  
-      		  filterbeforedata->fixmode=modenum[0];
+      	    filterbeforedata->fixmode=modenum[0];
             filterbeforedata->NumSV=modenum[1];
+            filterbeforedata->gps_week=gps_week[0];
+            filterbeforedata->timeofweek=timeofweek[0];
             filterbeforedata->Latitude=(float)array_position[0]/10000000.0;
             filterbeforedata->Longitude=(float)array_position[1]/10000000.0;
             filterbeforedata->SealevelAltitude=(float)array_altitude[1]/100.0;
               
-            filterbeforedata->GDOP=(float)array_dilution[0]/100.0;
-      		  filterbeforedata->PDOP=(float)array_dilution[1]/100.0;
-            filterbeforedata->HDOP=(float)array_dilution[2]/100.0;
-            filterbeforedata->VDOP=(float)array_dilution[3]/100.0;
-            filterbeforedata->TDOP=(float)array_dilution[4]/100.0;
+            filterbeforedata->gdop=(float)array_dilution[0]/100.0;
+      		  filterbeforedata->pdop=(float)array_dilution[1]/100.0;
+            filterbeforedata->hdop=(float)array_dilution[2]/100.0;
+            filterbeforedata->vdop=(float)array_dilution[3]/100.0;
+            filterbeforedata->tdop=(float)array_dilution[4]/100.0;
 
             if ((array_position[0]!=0)&&(array_position[1]!=0))  {
             filterdata=filter->KalmanProcessing((int64_t)array_position[0], (int64_t)array_position[1]);
             } else if (filter->i == 100) {filterdata=filter->KalmanNoData();}
             filterafterdata->Latitude=(float)filterdata[0]/10000000.0;
             filterafterdata->Longitude=(float)filterdata[1]/10000000.0;
-            filterafterdata->receivedtime=(float)filterdata[2];
+            //filterafterdata->receivedtime=(float)filterdata[2];
             long_velocity=0;
             for(int k=0;k<3;k++)
                 long_velocity+=(array_veolcity[k]*array_veolcity[k]);
@@ -198,9 +202,9 @@ int GPSNavigationMsgProcessing(NavGPSdata *filterbeforedata, NavGPSdata *filtera
             filterdata = filterVA->KalmanProcessing(array_altitude[1], long_velocity);
             filterafterdata->SealevelAltitude=(float)filterdata[0]/100.0;
             filterafterdata->velocity=(float)filterdata[1]/100.0;
-            //filterafterdata->velocity=(float)filterdata[1]/100.0;
             return 1;        
             
         }
         else return ret;
 }
+

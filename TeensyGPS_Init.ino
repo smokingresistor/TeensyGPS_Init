@@ -20,6 +20,8 @@ SendBinaryMessagetoGPSreceiver(gps.SetBinaryMessagetype(), gps.SendStream,gps.Re
 delay(3000);    
 SendBinaryMessagetoGPSreceiver(gps.SetPositionRate(50), gps.SendStream,gps.RecVBinarybuf,0,2000);
 delay(3000);    
+SendBinaryMessagetoGPSreceiver(gps.ConfigureSBAS(1, 1, 8, 1, 3, 0, 1), gps.SendStream,gps.RecVBinarybuf,0,2000);
+delay(3000); 
 if(SendBinaryMessagetoGPSreceiver(gps.GetSoftVersion(), gps.SendStream,gps.RecVBinarybuf,0,2000)==3);
     if(waitingRespondandReceive(gps.RecVBinarybuf,0x80,2000)>7){
           BinaryRecvMsgtype(messagetype,gps.RecVBinarybuf);
@@ -34,4 +36,3 @@ void loop()
 {
 
 }  
-

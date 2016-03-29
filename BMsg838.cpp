@@ -113,6 +113,23 @@ uint8_t BMsg838::ResetGNSS(uint8_t startmode, uint16_t year, uint8_t month, uint
 	SendStream[14]=altitude; 
 	return MakeBinaryMessage(15);
 }
+
+/*This is a request to configure SBAS parameters of GNSS receiver. */
+uint8_t BMsg838::ConfigureSBAS(boolean en_SBAS, uint16_t ranging, uint8_t URA_mask, boolean en_corr,
+        uint8_t channels, uint8_t subsys_mask, uint8_t attributes)
+{
+	memset(SendStream,0,128);
+	SendStream[0]=0x62;
+	SendStream[1]=1;
+	SendStream[2]=en_SBAS; 
+	SendStream[3]=ranging;
+	SendStream[4]=URA_mask;
+	SendStream[5]=en_corr; 
+	SendStream[6]=channels;
+	SendStream[7]=(1<<subsys_mask);
+	SendStream[8]=attributes;
+	return MakeBinaryMessage(9);
+}
 /*Make Stream to request message  of Softversion*/
 uint8_t BMsg838::GetSoftVersion(){
 	
@@ -428,10 +445,10 @@ uint8_t BMsg838::Response1PPSTiming(uint8_t* mode,uint32_t* len,uint32_t* stande
 		
 		*mode=RecVBinarybuf[5];
 		*len=(RecVBinarybuf[6]<<24)|(RecVBinarybuf[7]<<16)|(RecVBinarybuf[8]<<8)|RecVBinarybuf[9];
-		*standev=(RecVBinarybuf[10]<<24)|(RecVBinarybuf[11]<<16)|(RecVBinarybuf[12]<<8)|RecVBinarybuf[13];
-		*savelati=(RecVBinarybuf[14]<<56)|(RecVBinarybuf[15]<<48)|(RecVBinarybuf[16]<<40)|(RecVBinarybuf[17]<<32)|(RecVBinarybuf[18]<<24)|(RecVBinarybuf[19]<<16)|(RecVBinarybuf[20]<<8)|RecVBinarybuf[21];
-		*savelong=(RecVBinarybuf[22]<<56)|(RecVBinarybuf[23]<<48)|(RecVBinarybuf[24]<<40)|(RecVBinarybuf[25]<<32)|(RecVBinarybuf[25]<<26)|(RecVBinarybuf[27]<<16)|(RecVBinarybuf[28]<<8)|RecVBinarybuf[29];
-		*savealti=(RecVBinarybuf[30]<<24)|(RecVBinarybuf[31]<<16)|(RecVBinarybuf[32]<<8)|RecVBinarybuf[33];
+//		*standev=(RecVBinarybuf[10]<<24)|(RecVBinarybuf[11]<<16)|(RecVBinarybuf[12]<<8)|RecVBinarybuf[13];
+//		*savelati=(RecVBinarybuf[14]<<56)|(RecVBinarybuf[15]<<48)|(RecVBinarybuf[16]<<40)|(RecVBinarybuf[17]<<32)|(RecVBinarybuf[18]<<24)|(RecVBinarybuf[19]<<16)|(RecVBinarybuf[20]<<8)|RecVBinarybuf[21];
+//		*savelong=(RecVBinarybuf[22]<<56)|(RecVBinarybuf[23]<<48)|(RecVBinarybuf[24]<<40)|(RecVBinarybuf[25]<<32)|(RecVBinarybuf[25]<<26)|(RecVBinarybuf[27]<<16)|(RecVBinarybuf[28]<<8)|RecVBinarybuf[29];
+//		*savealti=(RecVBinarybuf[30]<<24)|(RecVBinarybuf[31]<<16)|(RecVBinarybuf[32]<<8)|RecVBinarybuf[33];
 		*runtimemode=RecVBinarybuf[34];
 		*runtimelen=(RecVBinarybuf[35]<<24)|(RecVBinarybuf[36]<<16)|(RecVBinarybuf[37]<<8)|RecVBinarybuf[38];
 		return (checksum(RecVBinarybuf+4, 35)==RecVBinarybuf[39]);
@@ -795,12 +812,14 @@ uint8_t BMsg838::Response1PPSFrequency(uint32_t *frequency)
 	return : 1->receive success, 0-> checksum error, -1->timeout, 3->NACK
 												
 */
-uint8_t BMsg838::ReceiveNavigationData(uint8_t* modenum,int32_t *position, uint32_t* altitude, uint16_t *dilution, int32_t* coordinate,int32_t* veolcity)
+uint8_t BMsg838::ReceiveNavigationData(uint8_t* modenum, uint16_t* gps_week, uint32_t* timeofweek, int32_t *position, uint32_t* altitude, uint16_t *dilution, int32_t* coordinate,int32_t* veolcity)
 {
 	
 	if(RecVBinarybuf[4]==0xA8){
 		modenum[0]=RecVBinarybuf[5];
 		modenum[1]=RecVBinarybuf[6];
+                gps_week[0]=(RecVBinarybuf[7]<<8)|(RecVBinarybuf[8]<<0);
+                timeofweek[0]=(RecVBinarybuf[9]<<24)|(RecVBinarybuf[10]<<16)|(RecVBinarybuf[11]<<8)|(RecVBinarybuf[12]<<0);
 		position[0]=(RecVBinarybuf[13]<<24)|(RecVBinarybuf[14]<<16)|(RecVBinarybuf[15]<<8)|(RecVBinarybuf[16]<<0);
 		position[1]=(RecVBinarybuf[17]<<24)|(RecVBinarybuf[18]<<16)|(RecVBinarybuf[19]<<8)|(RecVBinarybuf[20]<<0);
 		altitude[0]=(RecVBinarybuf[21]<<24)|(RecVBinarybuf[22]<<16)|(RecVBinarybuf[23]<<8)|(RecVBinarybuf[24]<<0);
@@ -1105,22 +1124,23 @@ int BMsg838::gpsstrcmp(const char *str1, const char *str2)
     ++str1, ++str2;
   return *str1;
 }
-void BMsg838::crack_datetime(int *year, byte *month, byte *day, 
-  byte *hour, byte *minute, byte *second, byte *hundredths, unsigned long *age)
+void BMsg838::crack_datetime(int &year, byte &month, byte &day, 
+  byte &hour, byte &minute, byte &second, byte &hundredths, unsigned long &age)
 {
-  unsigned long date, time;
-  get_datetime(&date, &time, age);
+  unsigned long date_, time_, age_;
+  get_datetime(&date_, &time_, &age_);
   if (year) 
   {
-    *year = date % 100;
-    *year += *year > 80 ? 1900 : 2000;
+    year = date_ % 100;
+    year += year > 80 ? 1900 : 2000;
   }
-  if (month) *month = (date / 100) % 100;
-  if (day) *day = date / 10000;
-  if (hour) *hour = time / 1000000;
-  if (minute) *minute = (time / 10000) % 100;
-  if (second) *second = (time / 100) % 100;
-  if (hundredths) *hundredths = time % 100;
+  if (month) month = (date_ / 100) % 100;
+  if (day) day = date_ / 10000;
+  if (hour) hour = time_ / 1000000;
+  if (minute) minute = (time_ / 10000) % 100;
+  if (second) second = (time_ / 100) % 100;
+  if (hundredths) hundredths = time_ % 100;
+  age = 0;
 }
 float BMsg838::distance_between (float lat1, float long1, float lat2, float long2) 
 {
@@ -1219,3 +1239,4 @@ const float BMsg838::GPS_INVALID_F_ANGLE = 1000.0;
 const float BMsg838::GPS_INVALID_F_ALTITUDE = 1000000.0;
 const float BMsg838::GPS_INVALID_F_SPEED = -1.0;		
 	
+
