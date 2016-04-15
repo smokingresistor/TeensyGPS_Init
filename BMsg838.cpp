@@ -115,7 +115,7 @@ uint8_t BMsg838::ResetGNSS(uint8_t startmode, uint16_t year, uint8_t month, uint
 }
 
 /*This is a request to configure SBAS parameters of GNSS receiver. */
-uint8_t BMsg838::ConfigureSBAS(boolean en_SBAS, uint16_t ranging, uint8_t URA_mask, boolean en_corr,
+uint8_t BMsg838::ConfigureSBAS(boolean en_SBAS, uint8_t ranging, uint8_t URA_mask, boolean en_corr,
         uint8_t channels, uint8_t subsys_mask, uint8_t attributes)
 {
 	memset(SendStream,0,128);
@@ -130,6 +130,18 @@ uint8_t BMsg838::ConfigureSBAS(boolean en_SBAS, uint16_t ranging, uint8_t URA_ma
 	SendStream[8]=attributes;
 	return MakeBinaryMessage(9);
 }
+/*This is a request to configure QZSS parameters of GNSS receiver. */
+uint8_t BMsg838::SetQZSS(uint8_t Enable,uint8_t channel,uint8_t attribute)
+{
+        memset(SendStream,0,128);
+	SendStream[0]=0x62;
+	SendStream[1]=3;
+	SendStream[2]=Enable; 
+	SendStream[3]=channel;
+	SendStream[4]=attribute;
+	return MakeBinaryMessage(5);
+}
+
 /*Make Stream to request message  of Softversion*/
 uint8_t BMsg838::GetSoftVersion(){
 	
@@ -851,7 +863,6 @@ uint8_t BMsg838::ReceiveNavigationData(uint8_t* modenum, uint16_t* gps_week, uin
 //uint8_t BMsg838::GetSBASStatus();
 //6280		char*	RespondSBASStatus(uint8_t Enable,uint8_t ranging,uint8_t URAmask,uint8_t correction,uint8_t channel,uint8_t subsystemmask,uint8_t *respond);
 
-//uint8_t BMsg838::SetQZSS(uint8_t Enable,uint8_t channel,uint8_t attribute);
 //uint8_t BMsg838::GetQZSS();
 //6281		char*	RespondQZSS(uint8_t Enable,uint8_t channel,uint8_t *respond);
 
