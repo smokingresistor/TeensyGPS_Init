@@ -11,7 +11,6 @@ memset(messagetype,0,64);
 
 Serial.begin(115200);
 Serial2.begin(9600);
-Serial.print("BMsg838 System reset.\r\n"); 
 SendBinaryMessagetoGPSreceiver(gps.ResetGNSS(1, 15, 6, 9,11, 30, 25, 20, 133, 1200), gps.SendStream,gps.RecVBinarybuf,0,2000);
 SendBinaryMessagetoGPSreceiver(gps.SetSerialPort(115200, 1), gps.SendStream,gps.RecVBinarybuf,0,2000);
 Serial2.begin(115200);
@@ -33,10 +32,9 @@ if(SendBinaryMessagetoGPSreceiver(gps.GetSoftVersion(), gps.SendStream,gps.RecVB
           GPSSoftVersiondata* versioninfo=gps.ResponseSoftVersion();
           printSoftversion(versioninfo);        
     }
-Serial.println("System Configuration Complete");
 } 
 
 void loop()
 {
-
+Serial.println("System Configuration Complete");
 }  
